@@ -1,0 +1,190 @@
+
+using System;
+using System.Collections.Generic;
+
+
+public interface IBattery
+{
+    int RemainingEnergy { get; }
+    void Consume(int amount);
+    void Recharge(int amount);
+}
+
+
+public class LithiumBattery : IBattery
+{
+    private int _remainingEnergy;
+ 
+    public int RemainingEnergy => _remainingEnergy;
+
+    public LithiumBattery(int initialEnergy = 100)
+    {
+        _remainingEnergy = Math.Clamp(initialEnergy, 0, 100);
+    }
+
+    public void Consume(int amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Amount cannot be negative.");
+
+        _remainingEnergy = Math.Max(0, _remainingEnergy - amount);
+    }
+
+    public void Recharge(int amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Amount cannot be negative.");
+
+        _remainingEnergy = Math.Min(100, _remainingEnergy + amount);
+    }
+}
+
+
+public class SolarBattery : IBattery
+{
+    private int _remainingEnergy;
+
+    public int RemainingEnergy => _remainingEnergy;
+
+    public SolarBattery(int initialEnergy = 100)
+    {
+        _remainingEnergy = Math.Clamp(initialEnergy, 0, 100);
+    }
+
+    public void Consume(int amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Amount cannot be negative.");
+
+        _remainingEnergy = Math.Max(0, _remainingEnergy - amount);
+    }
+
+    public void Recharge(int amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Amount cannot be negative.");
+
+        _remainingEnergy = Math.Min(100, _remainingEnergy + amount);
+    }
+}
+
+
+public abstract class Robot
+{
+    private readonly IBattery _battery;
+
+    public string Name { get; set; }
+
+    public int RemainingEnergy => _battery.RemainingEnergy;
+
+ 
+    protected Robot(string name, IBattery battery)
+    {
+        Name = name;
+        _battery = battery ?? throw new ArgumentNullException(nameof(battery));
+    }
+
+    public void Recharge(int amount)
+    {
+        _battery.Recharge(amount);
+        Console.WriteLine(
+            $"{Name} recharged by {amount} energy. Current energy: {RemainingEnergy}%");
+    }
+
+    protected void UseEnergy(int amount)
+    {
+        _battery.Consume(amount);
+        Console.WriteLine(
+            $"{Name} consumed {amount} energy. Remaining energy: {RemainingEnergy}%");
+    }
+
+    public abstract void PerformTask();
+}
+
+
+public class CleaningRobot : Robot
+{
+    public CleaningRobot(string name, IBattery battery)
+        : base(name, battery)
+    {
+    }
+
+    public override void PerformTask()
+    {
+        Console.WriteLine($"\n{Name} is cleaning the floor.");
+
+        if (RemainingEnergy < 10)
+        {
+            Console.WriteLine("Not enough energy to clean!");
+            return;
+        }
+
+        UseEnergy(10);
+        Console.WriteLine($"{Name} finished cleaning.");
+    }
+}
+
+
+public class DeliveryRobot : Robot
+{
+    public DeliveryRobot(string name, IBattery battery)
+        : base(name, battery)
+    {
+    }
+
+    public override void PerformTask()
+    {
+        Console.WriteLine($"\n{Name} is delivering a package.");
+
+        if (RemainingEnergy < 25)
+        {
+            Console.WriteLine("Not enough energy to deliver!");
+            return;
+        }
+
+        UseEnergy(25);
+        Console.WriteLine($"{Name} finished the delivery.");
+    }
+}
+
+// Main program
+public class Program
+{
+    public static void Main()
+    {
+       
+        CleaningRobot cleaner = new CleaningRobot(
+            "CleanBot", new LithiumBattery(80));
+
+        DeliveryRobot delivery = new DeliveryRobot(
+            "DeliveryBot", new SolarBattery(60));
+
+       
+        cleaner.PerformTask();
+        delivery.PerformTask();
+
+        
+        Console.WriteLine("\n--- Recharging Robots ---");
+        cleaner.Recharge(20);
+        delivery.Recharge(30);
+
+       
+        Console.WriteLine("\n--- Polymorphism Demonstration ---");
+
+        List<Robot> robots = new List<Robot>
+        {
+            cleaner,
+            delivery
+        };
+
+        foreach (Robot robot in robots)
+        {
+            Console.WriteLine(
+                $"\nRobot: {robot.Name} | Energy: {robot.RemainingEnergy}%");
+
+            robot.PerformTask();
+        }
+
+        Console.WriteLine("\nAll tasks completed.");
+    }
+}
